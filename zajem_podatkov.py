@@ -38,17 +38,6 @@ tabela = soup.find("table")
 # Iz tabele preberemo vse vrstice
 vrstice = tabela.find_all("tr")
 
-## Preverimo povezavo do prvega filma
-#prva_vrstica = vrstice[1]
-#celice = prva_vrstica.find_all(["th", "td"])
-#
-#film = celice[7]
-#povezava = film.find("a")
-#
-#print("\nPRVI FILM:")
-#print("Naslov:", film.get_text(strip=True))
-#print("Povezava:", povezava.get("href"))
-
 podatki = []
 filmi = []
 for vrstica in vrstice[1:]:
@@ -128,31 +117,6 @@ print("Število različnih filmov:", df["naslov"].nunique())
 print("\nKONČNI TIPI PODATKOV:")
 print(df.dtypes)
 
-
-
-# Pregled podstrani prvega filma
-#povezava_filma = filmi_df.iloc[0]["povezava"]
-#
-#url_filma = "https://www.boxofficemojo.com" + povezava_filma
-#
-#odziv_filma = requests.get(url_filma)
-#
-#soup_filma = BeautifulSoup(odziv_filma.text, "html.parser")
-#
-#najdeno = soup_filma.find(
-#    string=lambda tekst: tekst and "Distributor" in tekst
-#)
-#
-#distributer = (
-#    najdeno.parent
-#    .find_next_sibling("span")
-#    .find(string=True, recursive=False)
-#    .strip()
-#)
-#
-#print("\nDISTRIBUTER:")
-#print(distributer)
-
 prevod_zanrov = {
     "Action": "akcijski",
     "Adventure": "pustolovski",
@@ -210,11 +174,7 @@ def pridobi_podatek(soup, ime):
 
     return vrednost
 
-#distributer = pridobi_podatek(soup_filma, "Distributor")
-#running_time = pridobi_podatek(soup_filma, "Running Time")
-#genres = pridobi_podatek(soup_filma, "Genres")
-#genres = prevedi_zanre(genres)
-# Seznam za podatke o vseh filmih
+
 podatki_filmi = []
 
 for _, vrstica in filmi_df.iterrows():
@@ -275,13 +235,6 @@ filmi_podatki_df["največji dnevni zaslužek"] = (
     filmi_podatki_df["naslov"].map(najvecji_dnevni_zasluzek)
 )
 
-
-
-#print("\nKONČNA TABELA FILMOV:")
-#print(filmi_podatki_df)
-#
-#print("\nSTOLPCI:")
-#print(filmi_podatki_df.columns)
 
 # Shranimo tabelo filmov v CSV
 os.makedirs("podatki", exist_ok=True)
