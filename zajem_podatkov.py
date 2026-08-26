@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import os
+import re
+
 
 # Spletna stran, s katere zajemamo podatke
 url = "https://www.boxofficemojo.com/date/?ref_=bo_nb_in_tab"
@@ -164,6 +166,14 @@ def pridobi_podatek(soup, ime):
     if ime == "Distributor":
         return span.stripped_strings.__iter__().__next__().strip()
 
+    # Datum izida – vzamemo samo prvi datum in odstranimo dodatno besedilo
+    if ime == "Release Date":
+        datum = span.get_text(" ", strip=True)
+        najden_datum = re.search(r"[A-Z][a-z]{2} \d{1,2}, \d{4}", datum)
+        if najden_datum:
+            return najden_datum.group(0)
+        return datum
+    
     # Ostali podatki
     vrednost = span.get_text(" ", strip=True)
 
