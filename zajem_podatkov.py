@@ -206,6 +206,10 @@ for _, vrstica in filmi_df.iterrows():
         soup_filma, "Genres"
     )
 
+    datum_izida = pridobi_podatek(
+        soup_filma, "Release Date"
+    )
+
     # Prevedemo žanre
     genres = prevedi_zanre(genres)
 
@@ -214,8 +218,10 @@ for _, vrstica in filmi_df.iterrows():
         "naslov": naslov,
         "distributer": distributer,
         "trajanje": running_time,
-        "žanri": genres
+        "žanri": genres,
+        "datum izzida": datum_izida
     })
+    
 
 # Ustvarimo tabelo iz zbranih podatkov
 filmi_podatki_df = pd.DataFrame(podatki_filmi)
@@ -253,3 +259,6 @@ print(filmi_podatki_df.isna().sum())
 
 print("\nOSNOVNA STATISTIKA:")
 print(filmi_podatki_df.describe())
+
+print("\nSTOLPCI TABELE FILMOV:")
+print(filmi_podatki_df.columns)
