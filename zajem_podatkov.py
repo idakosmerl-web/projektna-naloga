@@ -90,7 +90,9 @@ df = df.rename(columns={
     "#1 Release": "naslov",
     "Gross": "dnevni zaslužek"
 })
-
+df["datum"] = df["datum"].str.extract(
+    r"^([A-Z][a-z]{2} \d{1,2})"
+)
 # Odstranimo $ in vejice ter zaslužek pretvorimo v število
 df["dnevni zaslužek"] = (
     df["dnevni zaslužek"]
