@@ -1,28 +1,17 @@
+import re
+import os
+
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
-import os
-import re
 
 
 # Spletna stran, s katere zajemamo podatke
 url = "https://www.boxofficemojo.com/date/?ref_=bo_nb_in_tab"
 
-# Zajem spletne strani
-odziv = requests.get(url)
-
-# Ustvarimo mapo za shranjevanje podatkov
+# Ustvarimo mape za shranjevanje podatkov
 os.makedirs("podatki", exist_ok=True)
-# Ustvarimo mapo za shranjevanje originalnih spletnih strani
 os.makedirs("original_spletne_strani", exist_ok=True)
-
-# Shranimo originalni HTML
-with open(
-    "original_spletne_strani/boxofficemojo_dnevna_2026-08-25.html",
-    "r",
-    encoding="utf-8"
-) as datoteka:
-    html = datoteka.read()
 
 # Preberemo shranjeni HTML
 with open(
@@ -40,8 +29,10 @@ tabela = soup.find("table")
 # Iz tabele preberemo vse vrstice
 vrstice = tabela.find_all("tr")
 
+#Izločimo naslove filmov in povezave do njihovih podstrani
 podatki = []
 filmi = []
+
 for vrstica in vrstice[1:]:
     celice = vrstica.find_all(["th", "td"])
 
@@ -55,15 +46,12 @@ for vrstica in vrstice[1:]:
         filmi.append([naslov, url_filma])
 
 filmi_df = pd.DataFrame(filmi, columns=["naslov", "povezava"])
-
 filmi_df = filmi_df.drop_duplicates(subset="naslov")
+
 filmi_df.to_csv("podatki/seznam_filmov.csv", index=False, encoding="utf-8-sig")
 
-print("\nFILMI IN POVEZAVE:")
-print(filmi_df)
 
-print("\nŠtevilo različnih filmov:", len(filmi_df))
-
+#Prevorimo celotno tabelo v podatkovni vir
 for vrstica in vrstice:
     celice = vrstica.find_all(["th", "td"])
 
@@ -78,9 +66,6 @@ for vrstica in vrstice:
 # Prvo vrstico uporabimo kot imena stolpcev
 df = pd.DataFrame(podatki[1:], columns=podatki[0])
 
-print("\nIZVORNI STOLPCI:")
-print(df.columns)
-
 # Obdržimo samo stolpce, ki jih potrebujemo
 df = df[["Date", "#1 Release", "Gross"]]
 
@@ -90,9 +75,11 @@ df = df.rename(columns={
     "#1 Release": "naslov",
     "Gross": "dnevni zaslužek"
 })
+
 df["datum"] = df["datum"].str.extract(
     r"^([A-Z][a-z]{2} \d{1,2})"
 )
+
 # Odstranimo $ in vejice ter zaslužek pretvorimo v število
 df["dnevni zaslužek"] = (
     df["dnevni zaslužek"]
@@ -101,25 +88,12 @@ df["dnevni zaslužek"] = (
     .astype(int)
 )
 
+#Shranimo dnevne podatke kot CSV
 df.to_csv(
     "podatki/dnevni_podatki.csv",
     index=False,
     encoding="utf-8-sig"
 )
-
-# Izpis končne tabele
-print("\nKONČNA TABELA:")
-print(df.head())
-
-# Število vseh vrstic
-print("\nŠtevilo vrstic:", len(df))
-
-# Število različnih filmov
-print("Število različnih filmov:", df["naslov"].nunique())
-
-# Tipi podatkov
-print("\nKONČNI TIPI PODATKOV:")
-print(df.dtypes)
 
 prevod_zanrov = {
     "Action": "akcijski",
@@ -157,6 +131,8 @@ def prevedi_zanre(zanri):
 
     return ", ".join(prevedeni)
 
+
+#Pridobivanje podatkov iz podstrani
 def pridobi_podatek(soup, ime):
     najdeno = soup.find(
         string=lambda tekst: tekst and ime in tekst
@@ -164,9 +140,11 @@ def pridobi_podatek(soup, ime):
 
     span = najdeno.parent.find_next_sibling("span")
 
+
     # Distributer – vzamemo samo prvo besedilo
     if ime == "Distributor":
         return span.stripped_strings.__iter__().__next__().strip()
+
 
     # Datum izida – vzamemo samo prvi datum in odstranimo dodatno besedilo
     if ime == "Release Date":
@@ -175,9 +153,11 @@ def pridobi_podatek(soup, ime):
         if najden_datum:
             return najden_datum.group(0)
         return datum
+
     
     # Ostali podatki
     vrednost = span.get_text(" ", strip=True)
+
 
     # Žanre ločimo z vejico
     if ime == "Genres":
@@ -186,7 +166,7 @@ def pridobi_podatek(soup, ime):
 
     return vrednost
 
-
+#Zberemo podatke za vsak film
 podatki_filmi = []
 
 for _, vrstica in filmi_df.iterrows():
@@ -195,32 +175,18 @@ for _, vrstica in filmi_df.iterrows():
     povezava = vrstica["povezava"]
 
     # Sestavimo URL podstrani filma
-    url_filma = "https://www.boxofficemojo.com" + povezava
+    url_filma = ("https://www.boxofficemojo.com" + povezava)
 
     # Zajamemo podstran
     odziv_filma = requests.get(url_filma)
 
-    soup_filma = BeautifulSoup(
-        odziv_filma.text,
-        "html.parser"
-    )
+    soup_filma = BeautifulSoup(odziv_filma.text, "html.parser")
 
     # Pridobimo podatke
-    distributer = pridobi_podatek(
-        soup_filma, "Distributor"
-    )
-
-    running_time = pridobi_podatek(
-        soup_filma, "Running Time"
-    )
-
-    genres = pridobi_podatek(
-        soup_filma, "Genres"
-    )
-
-    datum_izida = pridobi_podatek(
-        soup_filma, "Release Date"
-    )
+    distributer = pridobi_podatek(soup_filma, "Distributor")
+    running_time = pridobi_podatek(soup_filma, "Running Time")
+    genres = pridobi_podatek(soup_filma, "Genres")
+    datum_izida = pridobi_podatek(soup_filma, "Release Date")
 
     # Prevedemo žanre
     genres = prevedi_zanre(genres)
@@ -254,23 +220,22 @@ filmi_podatki_df["največji dnevni zaslužek"] = (
 )
 
 
-# Shranimo tabelo filmov v CSV
-os.makedirs("podatki", exist_ok=True)
-
+# Shranimo tabelo filmov kot CSV
 filmi_podatki_df.to_csv(
     "podatki/seznam_filmov_dopolnjeno.csv",
     index=False,
     encoding="utf-8-sig"
 )
 
-print("\nPREGLED TABELE FILMOV:")
-print(filmi_podatki_df.info())
+print("\nUSTVARJENE DATOTEKE IN NJIHOVE VELIKOSTI:")
 
-print("\nMANJKAJOČE VREDNOSTI:")
-print(filmi_podatki_df.isna().sum())
+print("seznam_filmov.csv:", filmi_df.shape)
+print("Stolpci:", list(filmi_df.columns))
 
-print("\nOSNOVNA STATISTIKA:")
-print(filmi_podatki_df.describe())
+print("\ndnevni_podatki.csv:", df.shape)
+print("Stolpci:", list(df.columns))
 
-print("\nSTOLPCI TABELE FILMOV:")
-print(filmi_podatki_df.columns)
+print("\nseznam_filmov_dopolnjeno.csv:", filmi_podatki_df.shape)
+print("Stolpci:", list(filmi_podatki_df.columns))
+
+print("\nZAJEM PODATKOV JE USPEŠNO ZAKLJUČEN")
