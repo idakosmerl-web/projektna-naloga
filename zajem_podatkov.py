@@ -17,6 +17,8 @@ with open("original_spletne_strani/boxofficemojo_dnevna_2026-08-25.html", "r", e
 
 soup = BeautifulSoup(html, "html.parser")
 
+
+#Pridobivanje podatkov iz glavne spletne strani
 tabela = soup.find("table")
 vrstice = tabela.find_all("tr")
 
@@ -128,7 +130,6 @@ def pridobi_podatek(soup, ime):
         return datum
 
     
-    # Ostali podatki
     vrednost = span.get_text(" ", strip=True)
 
     if ime == "Genres":
@@ -146,7 +147,7 @@ for _, vrstica in filmi_df.iterrows():
     povezava = vrstica["povezava"]
 
 
-    url_filma = ("https://www.boxofficemojo.com" + povezava)
+    url_filma = "https://www.boxofficemojo.com" + povezava
     odziv_filma = requests.get(url_filma)
     soup_filma = BeautifulSoup(odziv_filma.text, "html.parser")
 
@@ -164,7 +165,7 @@ for _, vrstica in filmi_df.iterrows():
         "distributer": distributer,
         "trajanje": running_time,
         "žanri": genres,
-        "datum izzida": datum_izida})
+        "datum izida": datum_izida})
     
 
 filmi_podatki_df = pd.DataFrame(podatki_filmi)
