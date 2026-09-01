@@ -18,7 +18,7 @@ with open("original_spletne_strani/boxofficemojo_dnevna_2026-08-25.html", "r", e
 soup = BeautifulSoup(html, "html.parser")
 
 
-#Pridobivanje podatkov iz glavne spletne strani
+# Pridobivanje podatkov iz glavne spletne strani
 tabela = soup.find("table")
 vrstice = tabela.find_all("tr")
 
@@ -59,7 +59,7 @@ df = pd.DataFrame(podatki[1:], columns=podatki[0])
 
 df = df[["Date", "#1 Release", "Gross"]]
 
-#Čiščenje podatkov
+# Čiščenje podatkov
 df = df.rename(columns={
     "Date": "datum",
     "#1 Release": "naslov",
@@ -112,7 +112,7 @@ def prevedi_zanre(zanri):
     return ", ".join(prevedeni)
 
 
-#Podstrani
+# Podstrani
 def pridobi_podatek(soup, ime):
     najdeno = soup.find(string=lambda tekst: tekst and ime in tekst)
 
